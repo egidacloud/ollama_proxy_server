@@ -22,18 +22,16 @@ async def migrate_settings_schema(db: AsyncSession) -> None:
     # Load current settings data
     current_data = db_settings.settings_data
 
-    # Create a settings model with defaults
-    default_settings = AppSettingsModel()
-    default_dict = json.loads(default_settings.model_dump_json())
+    # Create a settings model from current data (Pydantic will add defaults for missing fields)
+    settings_model = AppSettingsModel(**current_data)
 
-    # Merge: current data overrides defaults
-    merged_data = {**default_dict, **current_data}
+    # Convert back to dict with all fields
+    merged_data = json.loads(settings_model.model_dump_json())
 
-    # Check if update is needed
-    if merged_data != current_data:
-        db_settings.settings_data = merged_data
-        await db.commit()
-        await db.refresh(db_settings)
+    # Update database with merged data
+    db_settings.settings_data = merged_data
+    await db.commit()
+    await db.refresh(db_settings)
 
 async def update_app_settings(db: AsyncSession, settings_data: AppSettingsModel) -> AppSettings:
     """Updates the application settings in the database."""
