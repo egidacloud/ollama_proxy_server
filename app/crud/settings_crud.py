@@ -10,6 +10,31 @@ async def get_app_settings(db: AsyncSession) -> AppSettings | None:
     result = await db.execute(select(AppSettings).filter(AppSettings.id == 1))
     return result.scalars().first()
 
+async def migrate_settings_schema(db: AsyncSession) -> None:
+    """
+    Migrates old settings to include new fields with default values.
+    This ensures backward compatibility when new settings are added.
+    """
+    db_settings = await get_app_settings(db)
+    if not db_settings:
+        return
+
+    # Load current settings data
+    current_data = db_settings.settings_data
+
+    # Create a settings model with defaults
+    default_settings = AppSettingsModel()
+    default_dict = json.loads(default_settings.model_dump_json())
+
+    # Merge: current data overrides defaults
+    merged_data = {**default_dict, **current_data}
+
+    # Check if update is needed
+    if merged_data != current_data:
+        db_settings.settings_data = merged_data
+        await db.commit()
+        await db.refresh(db_settings)
+
 async def update_app_settings(db: AsyncSession, settings_data: AppSettingsModel) -> AppSettings:
     """Updates the application settings in the database."""
     db_settings = await get_app_settings(db)

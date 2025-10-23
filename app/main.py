@@ -107,10 +107,14 @@ async def lifespan(app: FastAPI):
         sys.exit(1)
 
     await init_db()
-    
+
     # --- NEW: Load settings from DB ---
     async with AsyncSessionLocal() as db:
         db_settings_obj = await settings_crud.create_initial_settings(db)
+        # Migrate settings schema to add any new fields
+        await settings_crud.migrate_settings_schema(db)
+        # Reload after migration
+        db_settings_obj = await settings_crud.get_app_settings(db)
         app.state.settings = AppSettingsModel.model_validate(db_settings_obj.settings_data)
 
     await create_initial_admin_user()
