@@ -15,10 +15,5 @@ class AppSettingsModel(BaseModel):
 
     model_update_interval_minutes: int = 10
 
-    # LemonSqueezy license verification
-    lemonsqueezy_enabled: bool = False
-    lemonsqueezy_store_id: str = ""
-    lemonsqueezy_api_key: str = ""
-
     class Config:
         from_attributes = True

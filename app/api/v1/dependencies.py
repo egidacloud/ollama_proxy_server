@@ -6,6 +6,7 @@ import redis.asyncio as redis
 import time
 
 from app.schema.settings import AppSettingsModel # <-- NEW
+from app.core.config import settings as config
 from app.database.session import get_db
 from app.crud import apikey_crud
 from app.core.security import verify_api_key
@@ -118,7 +119,7 @@ async def get_valid_api_key(
         pass
 
     # If standard auth failed and LemonSqueezy is enabled, try license verification
-    if settings.lemonsqueezy_enabled and settings.lemonsqueezy_api_key:
+    if config.LEMONSQUEEZY_ENABLED and config.LEMONSQUEEZY_API_KEY:
         license_key = api_key_str
         redis_client: redis.Redis = request.app.state.redis
 
@@ -147,7 +148,7 @@ async def get_valid_api_key(
 
         # Not in cache, validate via API
         try:
-            ls_client = LemonSqueezyClient(settings.lemonsqueezy_api_key)
+            ls_client = LemonSqueezyClient(config.LEMONSQUEEZY_API_KEY)
             is_valid, license_data = await ls_client.validate_and_activate_if_needed(license_key)
 
             if is_valid:
