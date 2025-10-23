@@ -9,6 +9,7 @@ from app.schema.settings import AppSettingsModel # <-- NEW
 from app.database.session import get_db
 from app.crud import apikey_crud
 from app.core.security import verify_api_key
+from app.core.lemonsqueezy import LemonSqueezyClient
 from app.database.models import APIKey
 import secrets
 
@@ -73,6 +74,7 @@ async def get_valid_api_key(
     request: Request,
     db: AsyncSession = Depends(get_db),
     auth_header: str = Depends(api_key_header),
+    settings: AppSettingsModel = Depends(get_settings),
 ) -> APIKey:
     if not auth_header:
         raise HTTPException(
@@ -88,42 +90,99 @@ async def get_valid_api_key(
 
     api_key_str = auth_header.split(" ")[1]
 
+    # Try standard API key authentication first
     try:
         prefix, secret = api_key_str.rsplit("_", 1)
+        db_api_key = await apikey_crud.get_api_key_by_prefix(db, prefix=prefix)
+
+        if db_api_key:
+            if db_api_key.is_revoked:
+                logger.warning(f"Attempt to use revoked API key with prefix '{prefix}'.")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="API Key has been revoked"
+                )
+
+            if not db_api_key.is_active:
+                logger.warning(f"Attempt to use disabled API key with prefix '{prefix}'.")
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="API Key is disabled"
+                )
+
+            if verify_api_key(secret, db_api_key.hashed_key):
+                request.state.api_key = db_api_key
+                return db_api_key
+            else:
+                logger.warning(f"Invalid secret for API key with prefix '{prefix}'.")
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key format",
-        )
+        # Not in standard API key format, might be a license key
+        pass
 
-    db_api_key = await apikey_crud.get_api_key_by_prefix(db, prefix=prefix)
+    # If standard auth failed and LemonSqueezy is enabled, try license verification
+    if settings.lemonsqueezy_enabled and settings.lemonsqueezy_api_key:
+        license_key = api_key_str
+        redis_client: redis.Redis = request.app.state.redis
 
-    if not db_api_key:
-        logger.warning(f"API key with prefix '{prefix}' not found.")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key"
-        )
+        # Check Redis cache first
+        cache_key = f"lemonsqueezy:license:{license_key}"
+        if redis_client:
+            try:
+                cached_result = await redis_client.get(cache_key)
+                if cached_result:
+                    logger.info("LemonSqueezy license validated from cache")
+                    # Create a virtual APIKey object for this request
+                    virtual_api_key = APIKey(
+                        id=0,
+                        key_name="LemonSqueezy License",
+                        key_prefix=f"ls_{license_key[:8]}",
+                        hashed_key="",
+                        user_id=0,
+                        is_active=True,
+                        is_revoked=False,
+                    )
+                    request.state.api_key = virtual_api_key
+                    request.state.is_lemonsqueezy = True
+                    return virtual_api_key
+            except Exception as e:
+                logger.error(f"Redis cache check failed: {e}")
 
-    if db_api_key.is_revoked:
-        logger.warning(f"Attempt to use revoked API key with prefix '{prefix}'.")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="API Key has been revoked"
-        )
+        # Not in cache, validate via API
+        try:
+            ls_client = LemonSqueezyClient(settings.lemonsqueezy_api_key)
+            is_valid, license_data = await ls_client.validate_and_activate_if_needed(license_key)
 
-    if not db_api_key.is_active:
-        logger.warning(f"Attempt to use disabled API key with prefix '{prefix}'.")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="API Key is disabled"
-        )
+            if is_valid:
+                logger.info("LemonSqueezy license validated successfully")
 
-    if not verify_api_key(secret, db_api_key.hashed_key):
-        logger.warning(f"Invalid secret for API key with prefix '{prefix}'.")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key"
-        )
+                # Cache the result in Redis for 1 hour
+                if redis_client:
+                    try:
+                        await redis_client.setex(cache_key, 3600, "valid")
+                    except Exception as e:
+                        logger.error(f"Failed to cache LemonSqueezy license: {e}")
 
-    request.state.api_key = db_api_key
-    return db_api_key
+                # Create a virtual APIKey object for this request
+                virtual_api_key = APIKey(
+                    id=0,
+                    key_name="LemonSqueezy License",
+                    key_prefix=f"ls_{license_key[:8]}",
+                    hashed_key="",
+                    user_id=0,
+                    is_active=True,
+                    is_revoked=False,
+                )
+                request.state.api_key = virtual_api_key
+                request.state.is_lemonsqueezy = True
+                return virtual_api_key
+            else:
+                logger.warning("LemonSqueezy license validation failed")
+        except Exception as e:
+            logger.error(f"Error during LemonSqueezy validation: {e}")
+
+    # Both authentication methods failed
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid API Key or License"
+    )
 
 # --- Rate Limiting Dependency ---
 async def rate_limiter(

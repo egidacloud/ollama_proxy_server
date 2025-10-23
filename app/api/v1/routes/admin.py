@@ -159,9 +159,10 @@ async def admin_settings_form(request: Request, admin_user: User = Depends(requi
 @router.post("/settings", name="admin_settings_post", dependencies=[Depends(validate_csrf_token)])
 async def admin_settings_post(request: Request, db: AsyncSession = Depends(get_db), admin_user: User = Depends(require_admin_user)):
     form_data = await request.form()
-    
+
     current_settings: AppSettingsModel = request.app.state.settings
     new_redis_password = form_data.get("redis_password")
+    new_lemonsqueezy_api_key = form_data.get("lemonsqueezy_api_key")
 
     try:
         updated_settings_data = AppSettingsModel(
@@ -174,10 +175,13 @@ async def admin_settings_post(request: Request, db: AsyncSession = Depends(get_d
             allowed_ips=form_data.get("allowed_ips", ""),
             denied_ips=form_data.get("denied_ips", ""),
             model_update_interval_minutes=int(form_data.get("model_update_interval_minutes")),
+            lemonsqueezy_enabled=form_data.get("lemonsqueezy_enabled") == "on",
+            lemonsqueezy_store_id=form_data.get("lemonsqueezy_store_id", ""),
+            lemonsqueezy_api_key=new_lemonsqueezy_api_key if new_lemonsqueezy_api_key else current_settings.lemonsqueezy_api_key,
         )
-        
+
         await settings_crud.update_app_settings(db, settings_data=updated_settings_data)
-        
+
         request.app.state.settings = updated_settings_data
 
         flash(request, "Settings updated successfully. Changes are now live.", "success")
