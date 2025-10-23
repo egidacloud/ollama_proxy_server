@@ -100,7 +100,20 @@ async def periodic_model_refresh(app: FastAPI) -> None:
 async def lifespan(app: FastAPI):
     # ---------- Startup ----------
     logger.info("Starting up Ollama Proxy Server…")
-    
+    logger.info(f"Version: {settings.APP_VERSION}")
+    logger.info(f"Proxy Port: {settings.PROXY_PORT}")
+
+    # Log LemonSqueezy configuration
+    if settings.LEMONSQUEEZY_ENABLED:
+        logger.info("✓ LemonSqueezy license verification is ENABLED")
+        if settings.LEMONSQUEEZY_API_KEY:
+            logger.info(f"  Store ID: {settings.LEMONSQUEEZY_STORE_ID}")
+            logger.info(f"  API Key: {'*' * 20}{settings.LEMONSQUEEZY_API_KEY[-4:] if len(settings.LEMONSQUEEZY_API_KEY) > 4 else '****'}")
+        else:
+            logger.warning("  ⚠ LemonSqueezy enabled but API key is missing!")
+    else:
+        logger.info("LemonSqueezy license verification is disabled")
+
     if settings.ADMIN_PASSWORD == "changeme":
         logger.critical("FATAL: The admin password is set to the default value 'changeme'.")
         logger.critical("Please change ADMIN_PASSWORD in your .env file or run the setup wizard and restart.")

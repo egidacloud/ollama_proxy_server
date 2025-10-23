@@ -119,17 +119,22 @@ async def get_valid_api_key(
         pass
 
     # If standard auth failed and LemonSqueezy is enabled, try license verification
+    logger.info(f"Standard API key authentication failed. LemonSqueezy enabled: {config.LEMONSQUEEZY_ENABLED}")
+
     if config.LEMONSQUEEZY_ENABLED and config.LEMONSQUEEZY_API_KEY:
+        logger.info(f"Attempting LemonSqueezy license verification for key: {api_key_str[:20]}...")
         license_key = api_key_str
         redis_client: redis.Redis = request.app.state.redis
 
         # Check Redis cache first
         cache_key = f"lemonsqueezy:license:{license_key}"
+        logger.debug(f"Checking Redis cache for key: {cache_key}")
+
         if redis_client:
             try:
                 cached_result = await redis_client.get(cache_key)
                 if cached_result:
-                    logger.info("LemonSqueezy license validated from cache")
+                    logger.info(f"✓ LemonSqueezy license validated from Redis cache")
                     # Create a virtual APIKey object for this request
                     virtual_api_key = APIKey(
                         id=0,
@@ -143,21 +148,28 @@ async def get_valid_api_key(
                     request.state.api_key = virtual_api_key
                     request.state.is_lemonsqueezy = True
                     return virtual_api_key
+                else:
+                    logger.debug("License not found in Redis cache, will validate via API")
             except Exception as e:
                 logger.error(f"Redis cache check failed: {e}")
+        else:
+            logger.warning("Redis client not available, skipping cache check")
 
         # Not in cache, validate via API
         try:
+            logger.info("Calling LemonSqueezy API to validate license...")
             ls_client = LemonSqueezyClient(config.LEMONSQUEEZY_API_KEY)
             is_valid, license_data = await ls_client.validate_and_activate_if_needed(license_key)
 
             if is_valid:
-                logger.info("LemonSqueezy license validated successfully")
+                logger.info(f"✓ LemonSqueezy license validated successfully via API")
+                logger.debug(f"License data: {license_data}")
 
                 # Cache the result in Redis for 1 hour
                 if redis_client:
                     try:
                         await redis_client.setex(cache_key, 3600, "valid")
+                        logger.info(f"Cached valid license in Redis (TTL: 3600s)")
                     except Exception as e:
                         logger.error(f"Failed to cache LemonSqueezy license: {e}")
 
@@ -175,9 +187,14 @@ async def get_valid_api_key(
                 request.state.is_lemonsqueezy = True
                 return virtual_api_key
             else:
-                logger.warning("LemonSqueezy license validation failed")
+                logger.warning(f"✗ LemonSqueezy license validation failed")
+                logger.debug(f"License data: {license_data}")
         except Exception as e:
-            logger.error(f"Error during LemonSqueezy validation: {e}")
+            logger.error(f"✗ Exception during LemonSqueezy validation: {e}", exc_info=True)
+    elif config.LEMONSQUEEZY_ENABLED and not config.LEMONSQUEEZY_API_KEY:
+        logger.warning("LemonSqueezy is enabled but API key is not configured in .env")
+    else:
+        logger.debug("LemonSqueezy authentication is disabled")
 
     # Both authentication methods failed
     raise HTTPException(
