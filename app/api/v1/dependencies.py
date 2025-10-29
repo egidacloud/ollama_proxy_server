@@ -66,39 +66,42 @@ async def login_rate_limiter(request: Request):
 
 # --- IP Filtering Dependency ---
 async def ip_filter(request: Request, settings: AppSettingsModel = Depends(get_settings)):
-    # Extract real client IP from proxy headers
-    # Priority: Cf-Connecting-Ip (Cloudflare) > X-Forwarded-For > request.client.host
-    client_ip = None
-    ip_source = None
-
-    # Try Cloudflare header first (most reliable for Cloudflare deployments)
-    if "cf-connecting-ip" in request.headers:
-        client_ip = request.headers["cf-connecting-ip"]
-        ip_source = "Cf-Connecting-Ip"
-    # Try X-Forwarded-For (standard proxy header)
-    elif "x-forwarded-for" in request.headers:
-        # X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2...)
-        # Take the first (leftmost) IP which is the original client
-        forwarded_ips = request.headers["x-forwarded-for"].split(",")
-        client_ip = forwarded_ips[0].strip()
-        ip_source = "X-Forwarded-For"
-    # Fallback to direct connection IP
-    else:
-        client_ip = request.client.host
-        ip_source = "request.client.host"
-
-    logger.debug(f"IP filter checking: {client_ip} (source: {ip_source})")
-
-    allowed_ips = [ip.strip() for ip in settings.allowed_ips.split(',') if ip.strip()]
-    denied_ips = [ip.strip() for ip in settings.denied_ips.split(',') if ip.strip()]
-
-    if "*" not in allowed_ips and allowed_ips and client_ip not in allowed_ips:
-        logger.warning(f"IP address {client_ip} (source: {ip_source}) denied by allow-list.")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="IP address not allowed")
-    if denied_ips and client_ip in denied_ips:
-        logger.warning(f"IP address {client_ip} (source: {ip_source}) denied by deny-list.")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="IP address has been blocked")
+    # IP filtering is disabled - uncomment below to enable
     return True
+
+    # # Extract real client IP from proxy headers
+    # # Priority: Cf-Connecting-Ip (Cloudflare) > X-Forwarded-For > request.client.host
+    # client_ip = None
+    # ip_source = None
+
+    # # Try Cloudflare header first (most reliable for Cloudflare deployments)
+    # if "cf-connecting-ip" in request.headers:
+    #     client_ip = request.headers["cf-connecting-ip"]
+    #     ip_source = "Cf-Connecting-Ip"
+    # # Try X-Forwarded-For (standard proxy header)
+    # elif "x-forwarded-for" in request.headers:
+    #     # X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2...)
+    #     # Take the first (leftmost) IP which is the original client
+    #     forwarded_ips = request.headers["x-forwarded-for"].split(",")
+    #     client_ip = forwarded_ips[0].strip()
+    #     ip_source = "X-Forwarded-For"
+    # # Fallback to direct connection IP
+    # else:
+    #     client_ip = request.client.host
+    #     ip_source = "request.client.host"
+
+    # logger.debug(f"IP filter checking: {client_ip} (source: {ip_source})")
+
+    # allowed_ips = [ip.strip() for ip in settings.allowed_ips.split(',') if ip.strip()]
+    # denied_ips = [ip.strip() for ip in settings.denied_ips.split(',') if ip.strip()]
+
+    # if "*" not in allowed_ips and allowed_ips and client_ip not in allowed_ips:
+    #     logger.warning(f"IP address {client_ip} (source: {ip_source}) denied by allow-list.")
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="IP address not allowed")
+    # if denied_ips and client_ip in denied_ips:
+    #     logger.warning(f"IP address {client_ip} (source: {ip_source}) denied by deny-list.")
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="IP address has been blocked")
+    # return True
 
 # --- API Key Authentication Dependency ---
 async def get_valid_api_key(
