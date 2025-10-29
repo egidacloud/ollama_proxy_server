@@ -77,7 +77,16 @@ async def _reverse_proxy(request: Request, path: str, servers: List[OllamaServer
     normalized_url = chosen_server.url.rstrip('/')
     backend_url = f"{normalized_url}/api/{path}"
 
-    headers = {k: v for k, v in request.headers.items() if k.lower() != 'host'}
+    # Filter headers: remove host and browser-specific headers that can cause Ollama to reject requests
+    headers_to_exclude = {
+        'host', 'origin', 'referer', 'sec-fetch-site', 'sec-fetch-mode',
+        'sec-fetch-dest', 'sec-ch-ua', 'sec-ch-ua-mobile', 'sec-ch-ua-platform',
+        'sec-gpc', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto',
+        'x-real-ip', 'x-original-host', 'cf-connecting-ip', 'cf-ray',
+        'cf-visitor', 'cf-ipcountry', 'cdn-loop', 'via', 'priority',
+        'x-railway-request-id', 'x-railway-edge', 'x-request-start'
+    }
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in headers_to_exclude}
 
     # Use pre-read body if available, otherwise stream from request
     if body_bytes:

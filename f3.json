@@ -1,0 +1,10 @@
+Oct 28 20:48:32 n5 gunicorn[1508974]: 2025-10-28 20:48:32,350 [INFO] httpx – HTTP Request: POST http://127.0.0.1:11434/api/show "HTTP/1.1 200 OK"
+Oct 28 20:48:32 n5 gunicorn[1508974]: 2025-10-28 20:48:32,352 [INFO] uvicorn.access – 162.220.234.74:0 - "POST /api/show HTTP/1.1" 200
+Oct 28 20:48:35 n5 gunicorn[1508976]: 2025-10-28 20:48:35,058 [INFO] httpx – HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+Oct 28 20:48:35 n5 gunicorn[1508976]: 2025-10-28 20:48:35,068 [INFO] uvicorn.access – 162.220.234.74:0 - "POST /api/chat HTTP/1.1" 200
+Oct 28 20:48:40 n5 gunicorn[1508974]: 2025-10-28 20:48:40,092 [INFO] app.api.v1.routes.proxy – Smart routing: Found 1 server(s) with model 'gemma3:27b'
+Oct 28 20:48:40 n5 gunicorn[1508974]: 2025-10-28 20:48:40,093 [INFO] httpx – HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 403 Forbidden"
+Oct 28 20:48:40 n5 gunicorn[1508974]: 2025-10-28 20:48:40,099 [INFO] uvicorn.access – 162.220.234.74:0 - "POST /api/chat HTTP/1.1" 403
+Oct 28 20:49:50 n5 gunicorn[1508974]: 2025-10-28 20:49:50,247 [INFO] app.api.v1.routes.proxy – Smart routing: Found 1 server(s) with model 'gemma3:27b'
+Oct 28 20:49:50 n5 gunicorn[1508974]: 2025-10-28 20:49:50,248 [INFO] httpx – HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 403 Forbidden"
+Oct 28 20:49:50 n5 gunicorn[1508974]: 2025-10-28 20:49:50,257 [INFO] uvicorn.access – 162.220.234.74:0 - "POST /api/chat HTTP/1.1" 403
