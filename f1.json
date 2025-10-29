@@ -1,0 +1,135 @@
+{
+  "upstream": "ollama.egida.ai:443",
+  "duration": 0.044847549,
+  "request": {
+    "remote_ip": "100.64.0.2",
+    "remote_port": "25922",
+    "client_ip": "100.64.0.2",
+    "proto": "HTTP/1.1",
+    "method": "POST",
+    "host": "ollama.egida.ai",
+    "uri": "/api/chat",
+    "headers": {
+      "Sec-Fetch-Mode": [
+        "cors"
+      ],
+      "X-Railway-Request-Id": [
+        "b8z7p5boSH6lyCH-ozsQ6Q"
+      ],
+      "Cf-Visitor": [
+        "{\"scheme\":\"https\"}"
+      ],
+      "User-Agent": [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+      ],
+      "Accept": [
+        "*/*"
+      ],
+      "X-Forwarded-Host": [
+        "test.egida.app"
+      ],
+      "X-Railway-Edge": [
+        "railway/us-east4-eqdc4a"
+      ],
+      "Accept-Encoding": [
+        "gzip, br"
+      ],
+      "Sec-Fetch-Dest": [
+        "empty"
+      ],
+      "Referer": [
+        "https://test.egida.app/"
+      ],
+      "X-Forwarded-Proto": [
+        "http"
+      ],
+      "Accept-Language": [
+        "en-US,en;q=0.7"
+      ],
+      "Cf-Ray": [
+        "995ddb8acf91d123-EWR"
+      ],
+      "Sec-Ch-Ua-Mobile": [
+        "?0"
+      ],
+      "Sec-Fetch-Site": [
+        "same-origin"
+      ],
+      "Content-Type": [
+        "application/json"
+      ],
+      "X-Forwarded-For": [
+        "100.64.0.2"
+      ],
+      "Cdn-Loop": [
+        "cloudflare; loops=1"
+      ],
+      "Sec-Gpc": [
+        "1"
+      ],
+      "Sec-Ch-Ua": [
+        "\"Brave\";v=\"141\", \"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"141\""
+      ],
+      "X-Original-Host": [
+        "test.egida.app"
+      ],
+      "Cf-Connecting-Ip": [
+        "74.104.168.165"
+      ],
+      "Via": [
+        "1.1 Caddy"
+      ],
+      "X-Real-Ip": [
+        "104.23.190.20"
+      ],
+      "Priority": [
+        "u=1, i"
+      ],
+      "Sec-Ch-Ua-Platform": [
+        "\"macOS\""
+      ],
+      "Authorization": [
+        "REDACTED"
+      ],
+      "Cf-Ipcountry": [
+        "US"
+      ],
+      "X-Request-Start": [
+        "1761690415815"
+      ],
+      "Origin": [
+        "https://test.egida.app"
+      ],
+      "Content-Length": [
+        "235"
+      ]
+    }
+  },
+  "headers": {
+    "Report-To": [
+      "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=Q3Ch01NEkZ21GDKn69akXlFfrrYIxnwuNr8aDznSvcyWkfHnGntQe7M%2BsG92VH5PRY3nWsJHKIePLgQuseR8sfrtfXyIbLsZwdqhxSExjQ%3D%3D\"}]}"
+    ],
+    "Nel": [
+      "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}"
+    ],
+    "Server": [
+      "cloudflare"
+    ],
+    "Cf-Ray": [
+      "995ddb8b998d5008-IAD"
+    ],
+    "Alt-Svc": [
+      "h3=\":443\"; ma=86400"
+    ],
+    "Date": [
+      "Tue, 28 Oct 2025 22:26:55 GMT"
+    ],
+    "Content-Length": [
+      "0"
+    ],
+    "Cf-Cache-Status": [
+      "DYNAMIC"
+    ]
+  },
+  "status": 403
+}
