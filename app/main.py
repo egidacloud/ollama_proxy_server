@@ -21,6 +21,7 @@ from app.core.config import settings
 from app.core.logging_config import setup_logging
 from app.api.v1.routes.health import router as health_router
 from app.api.v1.routes.proxy import router as proxy_router
+from app.api.v1.routes.openai_proxy import router as openai_proxy_router
 from app.api.v1.routes.admin import router as admin_router
 from app.database.session import AsyncSessionLocal, engine
 from app.database.base import Base 
@@ -210,6 +211,7 @@ async def add_security_headers(request: Request, call_next):
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(health_router, prefix="/api/v1", tags=["Health"])
 app.include_router(proxy_router, prefix="/api", tags=["Ollama Proxy"])
+app.include_router(openai_proxy_router, prefix="/v1", tags=["OpenAI-Compatible API"])
 app.include_router(admin_router, prefix="/admin", tags=["Admin UI"], include_in_schema=False)
 
 @app.get("/", include_in_schema=False, summary="Root")
